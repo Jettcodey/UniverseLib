@@ -47,14 +47,14 @@ namespace UniverseLib.Runtime.Il2Cpp
             else
             {
                 ICallManager.GetICall<d_Blit2>("UnityEngine.Graphics::Blit2")
-                    .Invoke(tex.Pointer, rt.Pointer);
+                    .Invoke(tex.ToIl2CppPointer(), rt.ToIl2CppPointer());
             }
         }
 
         protected internal override byte[] Internal_EncodeToPNG(Texture2D tex)
         {
             IntPtr arrayPtr = ICallManager.GetICall<d_EncodeToPNG>("UnityEngine.ImageConversion::EncodeToPNG")
-                .Invoke(tex.Pointer);
+                .Invoke(tex.ToIl2CppPointer());
 
             return arrayPtr == IntPtr.Zero ? null : new Il2CppStructArray<byte>(arrayPtr);
         }
