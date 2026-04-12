@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UniverseLib.Runtime.Il2Cpp;
+using UniverseLib.Utility;
+
 #if INTEROP
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.Attributes;
@@ -72,14 +74,16 @@ public class AssetBundle : UnityEngine.Object
         il2CppStream.Write(il2cppArray, 0, il2cppArray.Length);
         il2CppStream.Flush();
 
+        IntPtr streamPtr = il2CppStream.ToIl2CppPointer();
+
         ICallManager.GetICallUnreliable<d_ValidateLoadFromStream>(
             "UnityEngine.AssetBundle::ValidateLoadFromStream"
-            ).Invoke(il2CppStream.Pointer);
+            ).Invoke(streamPtr);
 
         ptr = ICallManager.GetICallUnreliable<d_LoadFromStream>(
                 "UnityEngine.AssetBundle::LoadFromStreamInternal",
                 "UnityEngine.AssetBundle::LoadFromStream")
-            .Invoke(il2CppStream.Pointer, crc, 0);
+            .Invoke(streamPtr, crc, 0);
 
         return ptr != IntPtr.Zero ? new AssetBundle(ptr) : null;
     }
