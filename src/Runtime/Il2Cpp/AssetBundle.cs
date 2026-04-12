@@ -51,35 +51,35 @@ public class AssetBundle : UnityEngine.Object
 
     private delegate IntPtr d_LoadFromMemory(IntPtr binary, uint crc);
 
-        private delegate void d_ValidateLoadFromStream(IntPtr stream);
-        private delegate IntPtr d_LoadFromStream(IntPtr stream, uint crc, uint managedReadBufferSize);
+    private delegate void d_ValidateLoadFromStream(IntPtr stream);
+    private delegate IntPtr d_LoadFromStream(IntPtr stream, uint crc, uint managedReadBufferSize);
 
-        [HideFromIl2Cpp]
-        public static AssetBundle LoadFromMemory(byte[] binary, uint crc = 0)
+    [HideFromIl2Cpp]
+    public static AssetBundle LoadFromMemory(byte[] binary, uint crc = 0)
+    {
+        var il2cppArray = new Il2CppStructArray<byte>(binary);
+        IntPtr ptr = ICallManager.GetICallUnreliable<d_LoadFromMemory>(
+                "UnityEngine.AssetBundle::LoadFromMemory_Internal",
+                "UnityEngine.AssetBundle::LoadFromMemory")
+            .Invoke(il2cppArray.Pointer, crc);
+
+        if (ptr != IntPtr.Zero)
         {
-            var il2cppArray = new Il2CppStructArray<byte>(binary);
-            IntPtr ptr = ICallManager.GetICallUnreliable<d_LoadFromMemory>(
-                    "UnityEngine.AssetBundle::LoadFromMemory_Internal",
-                    "UnityEngine.AssetBundle::LoadFromMemory")
-                .Invoke(il2cppArray.Pointer, crc);
+            return new AssetBundle(ptr);
+        }
 
-            if (ptr != IntPtr.Zero)
-            {
-                return new AssetBundle(ptr);
-            }
+        Il2CppSystem.IO.MemoryStream il2CppStream = new();
+        il2CppStream.Write(il2cppArray, 0, il2cppArray.Length);
+        il2CppStream.Flush();
 
-            Il2CppSystem.IO.MemoryStream il2CppStream = new();
-            il2CppStream.Write(il2cppArray, 0, il2cppArray.Length);
-            il2CppStream.Flush();
+        ICallManager.GetICallUnreliable<d_ValidateLoadFromStream>(
+            "UnityEngine.AssetBundle::ValidateLoadFromStream"
+            ).Invoke(il2CppStream.Pointer);
 
-            ICallManager.GetICallUnreliable<d_ValidateLoadFromStream>(
-                "UnityEngine.AssetBundle::ValidateLoadFromStream"
-                ).Invoke(il2CppStream.Pointer);
-
-            ptr = ICallManager.GetICallUnreliable<d_LoadFromStream>(
-                    "UnityEngine.AssetBundle::LoadFromStreamInternal",
-                    "UnityEngine.AssetBundle::LoadFromStream")
-                .Invoke(il2CppStream.Pointer, crc, 0);
+        ptr = ICallManager.GetICallUnreliable<d_LoadFromStream>(
+                "UnityEngine.AssetBundle::LoadFromStreamInternal",
+                "UnityEngine.AssetBundle::LoadFromStream")
+            .Invoke(il2CppStream.Pointer, crc, 0);
 
         return ptr != IntPtr.Zero ? new AssetBundle(ptr) : null;
     }
