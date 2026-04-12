@@ -18,38 +18,38 @@ using UnhollowerBaseLib.Attributes;
 using IL2CPPType = UnhollowerRuntimeLib.Il2CppType;
 #endif
 
-namespace UniverseLib
+namespace UniverseLib;
+
+/// <summary>
+/// Replacement class for AssetBundles in case they were stripped by the game.
+/// </summary>
+public class AssetBundle : UnityEngine.Object
 {
-    /// <summary>
-    /// Replacement class for AssetBundles in case they were stripped by the game.
-    /// </summary>
-    public class AssetBundle : UnityEngine.Object
+    static AssetBundle()
     {
-        static AssetBundle()
-        {
-            ClassInjector.RegisterTypeInIl2Cpp<AssetBundle>();
-        }
+        ClassInjector.RegisterTypeInIl2Cpp<AssetBundle>();
+    }
 
-        // ~~~~~~~~~~~~ Static ~~~~~~~~~~~~
+    // ~~~~~~~~~~~~ Static ~~~~~~~~~~~~
 
-        // AssetBundle.LoadFromFile(string path)
+    // AssetBundle.LoadFromFile(string path)
 
-        internal delegate IntPtr d_LoadFromFile(IntPtr path, uint crc, ulong offset);
+    internal delegate IntPtr d_LoadFromFile(IntPtr path, uint crc, ulong offset);
 
-        [HideFromIl2Cpp]
-        public static AssetBundle LoadFromFile(string path)
-        {
-            IntPtr ptr = ICallManager.GetICallUnreliable<d_LoadFromFile>(
-                    "UnityEngine.AssetBundle::LoadFromFile_Internal", 
-                    "UnityEngine.AssetBundle::LoadFromFile")
-                .Invoke(IL2CPP.ManagedStringToIl2Cpp(path), 0u, 0UL);
+    [HideFromIl2Cpp]
+    public static AssetBundle LoadFromFile(string path)
+    {
+        IntPtr ptr = ICallManager.GetICallUnreliable<d_LoadFromFile>(
+                "UnityEngine.AssetBundle::LoadFromFile_Internal", 
+                "UnityEngine.AssetBundle::LoadFromFile")
+            .Invoke(IL2CPP.ManagedStringToIl2Cpp(path), 0u, 0UL);
 
-            return ptr != IntPtr.Zero ? new AssetBundle(ptr) : null;
-        }
+        return ptr != IntPtr.Zero ? new AssetBundle(ptr) : null;
+    }
 
-        // AssetBundle.LoadFromMemory(byte[] binary)
+    // AssetBundle.LoadFromMemory(byte[] binary)
 
-        private delegate IntPtr d_LoadFromMemory(IntPtr binary, uint crc);
+    private delegate IntPtr d_LoadFromMemory(IntPtr binary, uint crc);
 
         private delegate void d_ValidateLoadFromStream(IntPtr stream);
         private delegate IntPtr d_LoadFromStream(IntPtr stream, uint crc, uint managedReadBufferSize);
@@ -81,64 +81,63 @@ namespace UniverseLib
                     "UnityEngine.AssetBundle::LoadFromStream")
                 .Invoke(il2CppStream.Pointer, crc, 0);
 
-            return ptr != IntPtr.Zero ? new AssetBundle(ptr) : null;
-        }
+        return ptr != IntPtr.Zero ? new AssetBundle(ptr) : null;
+    }
 
-        // AssetBundle.GetAllLoadedAssetBundles()
+    // AssetBundle.GetAllLoadedAssetBundles()
 
-        public delegate IntPtr d_GetAllLoadedAssetBundles_Native();
+    public delegate IntPtr d_GetAllLoadedAssetBundles_Native();
 
-        [HideFromIl2Cpp]
-        public static AssetBundle[] GetAllLoadedAssetBundles()
-        {
-            IntPtr ptr = ICallManager.GetICall<d_GetAllLoadedAssetBundles_Native>("UnityEngine.AssetBundle::GetAllLoadedAssetBundles_Native")
-                .Invoke();
+    [HideFromIl2Cpp]
+    public static AssetBundle[] GetAllLoadedAssetBundles()
+    {
+        IntPtr ptr = ICallManager.GetICall<d_GetAllLoadedAssetBundles_Native>("UnityEngine.AssetBundle::GetAllLoadedAssetBundles_Native")
+            .Invoke();
 
-            return ptr != IntPtr.Zero ? (AssetBundle[])new Il2CppReferenceArray<AssetBundle>(ptr) : null;
-        }
+        return ptr != IntPtr.Zero ? (AssetBundle[])new Il2CppReferenceArray<AssetBundle>(ptr) : null;
+    }
 
-        // ~~~~~~~~~~~~ Instance ~~~~~~~~~~~~
+    // ~~~~~~~~~~~~ Instance ~~~~~~~~~~~~
 
-        public readonly IntPtr m_bundlePtr = IntPtr.Zero;
+    public readonly IntPtr m_bundlePtr = IntPtr.Zero;
 
-        public AssetBundle(IntPtr ptr) : base(ptr) { m_bundlePtr = ptr; }
+    public AssetBundle(IntPtr ptr) : base(ptr) { m_bundlePtr = ptr; }
 
-        // LoadAllAssets()
+    // LoadAllAssets()
 
-        internal delegate IntPtr d_LoadAssetWithSubAssets_Internal(IntPtr _this, IntPtr name, IntPtr type);
+    internal delegate IntPtr d_LoadAssetWithSubAssets_Internal(IntPtr _this, IntPtr name, IntPtr type);
 
-        [HideFromIl2Cpp]
-        public UnityEngine.Object[] LoadAllAssets()
-        {
-            IntPtr ptr = ICallManager.GetICall<d_LoadAssetWithSubAssets_Internal>("UnityEngine.AssetBundle::LoadAssetWithSubAssets_Internal")
-                .Invoke(m_bundlePtr, IL2CPP.ManagedStringToIl2Cpp(""), IL2CPPType.Of<UnityEngine.Object>().Pointer);
+    [HideFromIl2Cpp]
+    public UnityEngine.Object[] LoadAllAssets()
+    {
+        IntPtr ptr = ICallManager.GetICall<d_LoadAssetWithSubAssets_Internal>("UnityEngine.AssetBundle::LoadAssetWithSubAssets_Internal")
+            .Invoke(m_bundlePtr, IL2CPP.ManagedStringToIl2Cpp(""), IL2CPPType.Of<UnityEngine.Object>().Pointer);
 
-            return ptr != IntPtr.Zero ? (UnityEngine.Object[])new Il2CppReferenceArray<UnityEngine.Object>(ptr) : new UnityEngine.Object[0];
-        }
+        return ptr != IntPtr.Zero ? (UnityEngine.Object[])new Il2CppReferenceArray<UnityEngine.Object>(ptr) : new UnityEngine.Object[0];
+    }
 
-        // LoadAsset<T>(string name, Type type)
+    // LoadAsset<T>(string name, Type type)
 
-        internal delegate IntPtr d_LoadAsset_Internal(IntPtr _this, IntPtr name, IntPtr type);
+    internal delegate IntPtr d_LoadAsset_Internal(IntPtr _this, IntPtr name, IntPtr type);
 
-        [HideFromIl2Cpp]
-        public T LoadAsset<T>(string name) where T : UnityEngine.Object
-        {
-            IntPtr ptr = ICallManager.GetICall<d_LoadAsset_Internal>("UnityEngine.AssetBundle::LoadAsset_Internal")
-                .Invoke(m_bundlePtr, IL2CPP.ManagedStringToIl2Cpp(name), IL2CPPType.Of<T>().Pointer);
+    [HideFromIl2Cpp]
+    public T LoadAsset<T>(string name) where T : UnityEngine.Object
+    {
+        IntPtr ptr = ICallManager.GetICall<d_LoadAsset_Internal>("UnityEngine.AssetBundle::LoadAsset_Internal")
+            .Invoke(m_bundlePtr, IL2CPP.ManagedStringToIl2Cpp(name), IL2CPPType.Of<T>().Pointer);
 
-            return ptr != IntPtr.Zero ? new UnityEngine.Object(ptr).TryCast<T>() : null;
-        }
+        return ptr != IntPtr.Zero ? new UnityEngine.Object(ptr).TryCast<T>() : null;
+    }
 
-        // Unload(bool unloadAllLoadedObjects);
+    // Unload(bool unloadAllLoadedObjects);
 
-        internal delegate void d_Unload(IntPtr _this, bool unloadAllLoadedObjects);
+    internal delegate void d_Unload(IntPtr _this, bool unloadAllLoadedObjects);
 
-        [HideFromIl2Cpp]
-        public void Unload(bool unloadAllLoadedObjects)
-        {
-            ICallManager.GetICall<d_Unload>("UnityEngine.AssetBundle::Unload")
-                .Invoke(this.m_bundlePtr, unloadAllLoadedObjects);
-        }
+    [HideFromIl2Cpp]
+    public void Unload(bool unloadAllLoadedObjects)
+    {
+        ICallManager.GetICall<d_Unload>("UnityEngine.AssetBundle::Unload")
+            .Invoke(this.m_bundlePtr, unloadAllLoadedObjects);
     }
 }
 #endif
