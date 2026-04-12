@@ -100,10 +100,14 @@ public static class ReflectionExtensions
     public static string ReflectionExToString(this Exception e, bool innerMost = true)
     {
         if (e == null)
+        {
             return "The exception was null.";
+        }
 
         if (innerMost)
+        {
             e = e.GetInnerMostException();
+        }
 
         return $"{e.GetType()}: {e.Message}";
     }
@@ -118,10 +122,14 @@ public static class ReflectionExtensions
         while (e != null)
         {
             if (e.InnerException == null)
+            {
                 break;
+            }
 #if CPP
             if (e.InnerException is System.Runtime.CompilerServices.RuntimeWrappedException)
+            {
                 break;
+            }
 #endif
             e = e.InnerException;
         }
