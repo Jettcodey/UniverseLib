@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UniverseLib.Config;
+using UniverseLib.Utility;
+
 #if INTEROP
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 #else
@@ -77,7 +79,7 @@ namespace UniverseLib.Runtime.Il2Cpp
         internal static Sprite CreateSpriteImpl(Texture texture, Rect rect, Vector2 pivot, float pixelsPerUnit, uint extrude, Vector4 border)
         {
             IntPtr spritePtr = ICallManager.GetICall<d_CreateSprite>("UnityEngine.Sprite::CreateSprite_Injected")
-                .Invoke(texture.Pointer, ref rect, ref pivot, pixelsPerUnit, extrude, 1, ref border, false);
+                .Invoke(texture.ToIl2CppPointer(), ref rect, ref pivot, pixelsPerUnit, extrude, 1, ref border, false);
 
             return spritePtr == IntPtr.Zero ? null : new Sprite(spritePtr);
         }
@@ -92,12 +94,11 @@ namespace UniverseLib.Runtime.Il2Cpp
                 Graphics.CopyTexture(
                     src, srcElement, srcMip, srcX, srcY, srcWidth, srcHeight,
                     dst, dstElement, dstMip, dstX, dstY);
-                return dst;
             }
             else
             {
                 ICallManager.GetICall<d_CopyTexture_Region>("UnityEngine.Graphics::CopyTexture_Region")
-                    .Invoke(src.Pointer, srcElement, srcMip, srcX, srcY, srcWidth, srcHeight, dst.Pointer, dstElement, dstMip, dstX, dstY);
+                    .Invoke(src.ToIl2CppPointer(), srcElement, srcMip, srcX, srcY, srcWidth, srcHeight, dst.ToIl2CppPointer(), dstElement, dstMip, dstX, dstY);
             }
             return dst;
         }
