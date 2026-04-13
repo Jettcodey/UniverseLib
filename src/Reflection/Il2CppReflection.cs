@@ -75,15 +75,10 @@ public class Il2CppReflection : ReflectionUtility
     }
 
     internal override Type Internal_GetTypeByName(string fullName)
-    {
-        if (obfuscatedToDeobfuscatedTypes.TryGetValue(fullName, out Type deob))
-            return deob;
-
-        return base.Internal_GetTypeByName(fullName);
-    }
+        => obfuscatedToDeobfuscatedTypes.TryGetValue(fullName, out Type? deob) ? deob : base.Internal_GetTypeByName(fullName);
 
 
-#region Get Actual type
+    #region Get Actual type
 
     internal override Type? Internal_GetActualType(object obj)
     {
@@ -96,7 +91,7 @@ public class Il2CppReflection : ReflectionUtility
 
         try
         {
-            if (il2cppPrimitivesToMono.TryGetValue(type.FullName, out Type systemPrimitive))
+            if (il2cppPrimitivesToMono.TryGetValue(type.FullName ?? "", out Type? systemPrimitive))
             {
                 return systemPrimitive;
             }
@@ -104,7 +99,7 @@ public class Il2CppReflection : ReflectionUtility
             if (obj is Il2CppObjectBase cppBase)
             {
                 // Don't need to cast ArrayBase
-                if (type.BaseType.IsGenericType
+                if (type.BaseType != null && type.BaseType.IsGenericType
                     && type.BaseType.GetGenericTypeDefinition() == typeof(Il2CppArrayBase<>))
                 {
                     return type;
@@ -144,7 +139,7 @@ public class Il2CppReflection : ReflectionUtility
         }
 
         // Check for primitives (Unhollower will return "System.*" for Il2CppSystem types.
-        if (AllTypes.TryGetValue(cppType.FullName, out Type primitive) && primitive.IsPrimitive)
+        if (AllTypes.TryGetValue(cppType.FullName, out Type? primitive) && primitive.IsPrimitive)
         {
             return primitive;
         }
@@ -156,7 +151,7 @@ public class Il2CppReflection : ReflectionUtility
 
         string fullname = cppType.FullName;
 
-        if (obfuscatedToDeobfuscatedTypes.TryGetValue(fullname, out Type deob))
+        if (obfuscatedToDeobfuscatedTypes.TryGetValue(fullname, out Type? deob))
         {
             return deob;
         }
@@ -182,7 +177,7 @@ public class Il2CppReflection : ReflectionUtility
         }
 #endif
 
-        if (!AllTypes.TryGetValue(fullname, out Type monoType))
+        if (!AllTypes.TryGetValue(fullname, out Type? monoType))
         {
             // If it's not in our dictionary, it's most likely a bound generic type.
             // Let's use GetType with the AssemblyQualifiedName, and fix System.* types to be Il2CppSystem.*
@@ -378,29 +373,31 @@ public class Il2CppReflection : ReflectionUtility
                 if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Il2CppSystem.Nullable<>))
                 {
                     object nullable = cppObj.TryCast(type);
-                    PropertyInfo nullableHasValueProperty = type.GetProperty("HasValue");
-                    if ((bool)nullableHasValueProperty.GetValue(nullable, null))
+                    PropertyInfo? nullableHasValueProperty = type.GetProperty("HasValue");
+                    if (nullableHasValueProperty?.GetValue(nullable, null) is true)
                     {
                         // nullable has a value.
-                        PropertyInfo nullableValueProperty = type.GetProperty("Value");
-                        return Enum.Parse(toType, nullableValueProperty.GetValue(nullable, null).ToString());
+                        PropertyInfo? nullableValueProperty = type.GetProperty("Value");
+                        return Enum.Parse(toType, nullableValueProperty?.GetValue(nullable, null)?.ToString() ?? "");
                     }
                     // nullable and no current value.
                     return cppObj;
                 }
 
-                return Enum.Parse(toType, cppObj.TryCast<Il2CppSystem.Enum>().ToString());
+                return Enum.Parse(toType, cppObj.TryCast<Il2CppSystem.Enum>()?.ToString() ?? "");
             }
 
             // Not enum, unbox with Il2CppObjectBase.Unbox
 
-            string name = toType.AssemblyQualifiedName;
+            string name = toType.AssemblyQualifiedName ?? "";
 
             if (!unboxMethods.ContainsKey(name))
             {
-                unboxMethods.Add(name, typeof(Il2CppObjectBase)
-                                            .GetMethod("Unbox")
-                                            .MakeGenericMethod(toType));
+                var method = typeof(Il2CppObjectBase).GetMethod("Unbox")?.MakeGenericMethod(toType);
+                if (method != null)
+                {
+                    unboxMethods.Add(name, method);
+                }
             }
 
             return unboxMethods[name].Invoke(cppObj, ArgumentUtility.EmptyArgs);
@@ -435,7 +432,7 @@ public class Il2CppReflection : ReflectionUtility
                 return Il2CppSystem.Enum.Parse(Il2CppType.From(type), value.ToString());
             }
 
-            if (type.IsPrimitive && AllTypes.TryGetValue($"Il2Cpp{type.FullName}", out Type cppType))
+            if (type.IsPrimitive && AllTypes.TryGetValue($"Il2Cpp{type.FullName}", out Type? cppType))
             {
                 return BoxIl2CppObject(MakeIl2CppPrimitive(cppType, value), cppType);
             }
@@ -449,7 +446,7 @@ public class Il2CppReflection : ReflectionUtility
         }
     }
 
-    private static Il2CppSystem.Object? BoxIl2CppObject(object cppStruct, Type structType)
+    private static Il2CppSystem.Object? BoxIl2CppObject(object? cppStruct, Type structType)
     {
         return AccessTools.Method(structType, "BoxIl2CppObject", ArgumentUtility.EmptyTypes)
                .Invoke(cppStruct, ArgumentUtility.EmptyArgs).TryCast<Il2CppSystem.Object>();
@@ -483,22 +480,20 @@ public class Il2CppReflection : ReflectionUtility
     /// <summary>
     /// Returns true if the provided Type is an Il2Cpp primitive.
     /// </summary>
-    public static bool IsIl2CppPrimitive(Type type) => il2cppPrimitivesToMono.ContainsKey(type.FullName);
+    public static bool IsIl2CppPrimitive(Type type) => il2cppPrimitivesToMono.ContainsKey(type.FullName ?? "");
 
     /// <summary>
     /// Returns the underlying <c>m_value</c> System primitive from the provided Il2Cpp primitive object.
     /// </summary>
-    public static object MakeMonoPrimitive(object cppPrimitive)
-    {
-        return AccessTools.Field(cppPrimitive.GetType(), "m_value").GetValue(cppPrimitive);
-    }
+    public static object? MakeMonoPrimitive(object cppPrimitive)
+        => AccessTools.Field(cppPrimitive.GetType(), "m_value").GetValue(cppPrimitive);
 
     /// <summary>
     /// Creates a new equivalent Il2Cpp primitive object using the provided <paramref name="monoValue"/>.
     /// </summary>
-    public static object MakeIl2CppPrimitive(Type cppType, object monoValue)
+    public static object? MakeIl2CppPrimitive(Type cppType, object monoValue)
     {
-        object cppStruct = Activator.CreateInstance(cppType);
+        object? cppStruct = Activator.CreateInstance(cppType);
         AccessTools.Field(cppType, "m_value").SetValue(cppStruct, monoValue);
         return cppStruct;
     }
@@ -597,14 +592,15 @@ public class Il2CppReflection : ReflectionUtility
     /// </summary>
     public static bool Il2CppTypeNotNull(Type type, out IntPtr il2cppPtr)
     {
-        if (!cppClassPointers.TryGetValue(type.AssemblyQualifiedName, out il2cppPtr))
+        var name = type.AssemblyQualifiedName ?? "";
+        if (!cppClassPointers.TryGetValue(name, out il2cppPtr))
         {
-            il2cppPtr = (IntPtr)typeof(Il2CppClassPointerStore<>)
-                .MakeGenericType(new[] { type })
-                .GetField("NativeClassPtr", BF.Public | BF.Static)
-                .GetValue(null);
+            il2cppPtr = (IntPtr?)typeof(Il2CppClassPointerStore<>)
+                .MakeGenericType([ type ])
+                .GetField("NativeClassPtr", BF.Public | BF.Static)?
+                .GetValue(null) ?? IntPtr.Zero;
 
-            cppClassPointers.Add(type.AssemblyQualifiedName, il2cppPtr);
+            cppClassPointers.Add(name, il2cppPtr);
         }
 
         return il2cppPtr != IntPtr.Zero;
@@ -638,10 +634,10 @@ public class Il2CppReflection : ReflectionUtility
             {
                 if (att.AttributeType == typeof(ObfuscatedNameAttribute))
                 {
-                    string obfuscatedName = att.ConstructorArguments[0].Value.ToString();
+                    string obfuscatedName = att.ConstructorArguments[0].Value?.ToString() ?? "";
 
                     obfuscatedToDeobfuscatedTypes.Add(obfuscatedName, type);
-                    deobfuscatedToObfuscatedNames.Add(type.FullName, obfuscatedName);
+                    deobfuscatedToObfuscatedNames.Add(type.FullName ?? "", obfuscatedName);
 
                     break;
                 }
@@ -652,7 +648,7 @@ public class Il2CppReflection : ReflectionUtility
 
     internal override string Internal_ProcessTypeInString(string theString, Type type)
     {
-        if (deobfuscatedToObfuscatedNames.TryGetValue(type.FullName, out string obfuscated))
+        if (deobfuscatedToObfuscatedNames.TryGetValue(type.FullName ?? "", out string? obfuscated))
             return theString.Replace(obfuscated, type.FullName);
 
         return theString;
@@ -665,13 +661,13 @@ public class Il2CppReflection : ReflectionUtility
 
     internal override void Internal_FindSingleton(string[] possibleNames, Type type, BF flags, List<object> instances)
     {
-        PropertyInfo pi;
+        PropertyInfo? pi;
         foreach (string name in possibleNames)
         {
             pi = type.GetProperty(name, flags);
             if (pi != null)
             {
-                object instance = pi.GetValue(null, null);
+                object? instance = pi.GetValue(null, null);
                 if (instance != null)
                 {
                     instances.Add(instance);
@@ -888,10 +884,10 @@ public class Il2CppReflection : ReflectionUtility
                 return true;
             }
 
-            PropertyInfo p_Keys = type.GetProperty("Keys");
-            object keys = p_Keys.GetValue(dictionary.TryCast(p_Keys.DeclaringType), null);
-            PropertyInfo p_Values = type.GetProperty("Values");
-            object values = p_Values.GetValue(dictionary.TryCast(p_Values.DeclaringType), null);
+            PropertyInfo? p_Keys = type.GetProperty("Keys");
+            object? keys = p_Keys?.GetValue(dictionary.TryCast(p_Keys?.DeclaringType), null);
+            PropertyInfo? p_Values = type.GetProperty("Values");
+            object? values = p_Values?.GetValue(dictionary.TryCast(p_Values?.DeclaringType), null);
 
             Il2CppEnumerator keysEnumerator = new(keys, keys.GetActualType());
             Il2CppEnumerator valuesEnumerator = new(values, values.GetActualType());
