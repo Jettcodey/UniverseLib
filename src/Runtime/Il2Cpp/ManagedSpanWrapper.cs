@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-#if CPP
+﻿#if CPP
+using System;
 using System.Runtime.InteropServices;
 
 namespace UniverseLib.Runtime.Il2Cpp;

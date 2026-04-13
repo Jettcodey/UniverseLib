@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UniverseLib.Runtime.Il2Cpp;
-using UniverseLib.Utility;
 using System.Runtime.InteropServices;
 
 #if INTEROP

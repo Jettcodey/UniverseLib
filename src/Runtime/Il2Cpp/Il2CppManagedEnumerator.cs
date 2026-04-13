@@ -9,8 +9,6 @@ using Type = System.Type;
 using ArgumentNullException = System.ArgumentNullException;
 using NotSupportedException = System.NotSupportedException;
 using Il2CppIEnumerator = Il2CppSystem.Collections.IEnumerator;
-using UniverseLib.Utility;
-
 #if INTEROP
 using Il2CppInterop.Runtime.Injection;
 using Il2CppInterop.Runtime;
