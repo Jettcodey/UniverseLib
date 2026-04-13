@@ -1,5 +1,7 @@
 ﻿#if CPP
 using System;
+using System.Reflection;
+
 #if INTEROP
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes;
@@ -10,7 +12,7 @@ using UnhollowerBaseLib;
 namespace UniverseLib.Utility;
 
 
-public static class Il2CppPointerHelper
+public static class Il2CppPointerExtension
 {
     /// <summary>
     /// Returns the Pointer to any given Il2Cpp Object.
@@ -22,6 +24,12 @@ public static class Il2CppPointerHelper
         // This ensures greater compatibility with any variation in behavior
         return IL2CPP.Il2CppObjectBaseToPtr(obj);
     }
+
+    // Il2CppInterop changed parameters from uint to nint
+    // We call IL2CPP.il2cpp_gchandle_get_target using Reflection to automatically handle value conversion
+    private static MethodInfo _gcHandleGetTarget = typeof(IL2CPP).GetMethod(nameof(IL2CPP.il2cpp_gchandle_get_target), BindingFlags.Public | BindingFlags.Static);
+    internal static IntPtr GetTargetPtr(this IntPtr gcHandle)
+        => (IntPtr)_gcHandleGetTarget.Invoke(null, [gcHandle]);
 }
 
 #endif
