@@ -32,8 +32,8 @@ public static class Universe
     }
 
     public const string NAME = "UniverseLib";
-    public const string VERSION = "1.6.2";
-    public const string AUTHOR = "Sinai, yukieiji";
+    public const string VERSION = "1.7.0";
+    public const string AUTHOR = "Sinai, yukieiji, Jettcodey";
     public const string GUID = "com.sinai.universelib";
 
     /// <summary>The current runtime context (Mono or IL2CPP).</summary>

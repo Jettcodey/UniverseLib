@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <RootNamespace>UniverseLib</RootNamespace>
         <Configuration Condition=" '$(Configuration)' == '' ">Release_IL2CPP_Unhollower</Configuration>
         <OutputType>Library</OutputType>
         <LangVersion>latest</LangVersion>
@@ -9,13 +10,11 @@
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <AllowedReferenceRelatedFileExtensions>none</AllowedReferenceRelatedFileExtensions>
         <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
         <Optimize>true</Optimize>
-        <!-- MSBuildの.NET8対応に伴って勝手にバージョンにハッシュ値入れられてBepInExのロード不具合が出たため、明示的に無効化しておく -->
         <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
-        <Configurations>Release_Mono;Release_IL2CPP_Unhollower;Release_IL2CPP_Interop_BIE;Release_IL2CPP_Interop_ML</Configurations>
+        <Configurations>Release_Mono;Release_IL2CPP_Unhollower;Release_IL2CPP_Interop_BIE;Release_IL2CPP_Interop_ML;Release_Unity63_Mono</Configurations>
     </PropertyGroup>
     <!-- Configurations -->
     <PropertyGroup Condition=" '$(Configuration)' == 'Release_IL2CPP_Unhollower' ">
@@ -46,7 +45,14 @@
         <AssemblyName>UniverseLib.Mono</AssemblyName>
         <DocumentationFile>..\Release\UniverseLib.Mono\UniverseLib.Mono.xml</DocumentationFile>
     </PropertyGroup>
-    <!-- NuGet -->
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release_Unity63_Mono' ">
+        <TargetFramework>net472</TargetFramework>
+        <OutputPath>..\Release\UniverseLib.Unity63.Mono\</OutputPath>
+        <DefineConstants>MONO;UNITY_6000_3_OR_NEWER</DefineConstants>
+        <AssemblyName>UniverseLib.Unity63.Mono</AssemblyName>
+        <DocumentationFile>..\Release\UniverseLib.Unity63.Mono\UniverseLib.Unity63.Mono.xml</DocumentationFile>
+    </PropertyGroup>
+    <!-- Nuget -->
     <ItemGroup>
         <PackageReference Include="HarmonyX" Version="2.5.2" IncludeAssets="compile" />
         <PackageReference Include="Microsoft.Unity.Analyzers" Version="1.17.0">
@@ -149,6 +155,48 @@
             <Private>False</Private>
         </Reference>
     </ItemGroup>
+    <ItemGroup Condition="'$(Configuration)' == 'Release_Unity63_Mono'">
+        <Reference Include="netstandard">
+            <HintPath>..\..\lib\unity63\netstandard.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine">
+            <HintPath>..\lib\unity63\UnityEngine_publicized.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.CoreModule">
+            <HintPath>..\lib\unity63\UnityEngine.CoreModule_publicized.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UI">
+            <HintPath>..\lib\unity63\UnityEngine.UI_publicized.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.UIModule">
+            <HintPath>..\..\lib\unity63\UnityEngine.UIModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.IMGUIModule">
+            <HintPath>..\..\lib\unity63\UnityEngine.IMGUIModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.PhysicsModule">
+            <HintPath>..\..\lib\unity63\UnityEngine.PhysicsModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.TextRenderingModule">
+            <HintPath>..\..\lib\unity63\UnityEngine.TextRenderingModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.AudioModule">
+            <HintPath>..\..\lib\unity63\UnityEngine.AudioModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="UnityEngine.AssetBundleModule">
+            <HintPath>..\..\lib\unity63\UnityEngine.AssetBundleModule.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Resources\*" />
     </ItemGroup>
@@ -179,5 +227,10 @@
         <Message Text="Copying Mono files..." Importance="high" Condition="'$(Configuration)' == 'Release_Mono'" />
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(OutputPath)..\NuGet_Mono\lib\net35" Condition="'$(Configuration)' == 'Release_Mono'" />
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).xml" DestinationFolder="$(OutputPath)..\NuGet_Mono\lib\net35" Condition="'$(Configuration)' == 'Release_Mono'" />
+
+        <!-- if Unity6.3 Mono -->
+        <Message Text="Copying Unity63 Mono files..." Importance="high" Condition="'$(Configuration)' == 'Release_Unity63_Mono'" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(OutputPath)..\NuGet_Unity63_Mono\lib\net35" Condition="'$(Configuration)' == 'Release_Mono'" />
+        <Copy SourceFiles="$(OutputPath)$(AssemblyName).xml" DestinationFolder="$(OutputPath)..\NuGet_Unity63_Mono\lib\net35" Condition="'$(Configuration)' == 'Release_Mono'" />
     </Target>
 </Project>
