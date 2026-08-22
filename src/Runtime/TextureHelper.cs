@@ -122,16 +122,33 @@ namespace UniverseLib.Runtime
         /// <returns>A new Texture2D, copied from the <paramref name="source"/>.</returns>
         public static Texture2D CopyTexture(Texture source, Rect dimensions = default, int cubemapFace = 0, int dstX = 0, int dstY = 0)
         {
-            TextureFormat format = TextureFormat.ARGB32;
-            if (source.TryCast<Texture2D>() is Texture2D tex2D)
-                format = tex2D.format;
-            else if (source.TryCast<Cubemap>() is Cubemap cmap)
-                format = cmap.format;
+            try
+            {
+                if (!source)
+                    return default;
 
-            Texture2D newTex = NewTexture2D((int)dimensions.width, (int)dimensions.height, format, false);
-            newTex.filterMode = FilterMode.Point;
+                if (dimensions == default)
+                    dimensions = new(0, 0, source.width, source.height);
 
-            return CopyTexture(source, newTex, dimensions, cubemapFace, dstX, dstY);
+                // Texture2D sources are copied by CopyToARGB32, which creates its own destination. Making
+                // one here would go unused, and throws for compressed formats with unaligned dimensions
+                if (source.TryCast<Texture2D>() is Texture2D tex2D)
+                    return CopyToARGB32(tex2D, dimensions, dstX, dstY);
+
+                TextureFormat format = TextureFormat.ARGB32;
+                if (source.TryCast<Cubemap>() is Cubemap cmap)
+                    format = cmap.format;
+
+                Texture2D newTex = NewTexture2D((int)dimensions.width, (int)dimensions.height, format, false);
+                newTex.filterMode = FilterMode.Point;
+
+                return CopyTexture(source, newTex, dimensions, cubemapFace, dstX, dstY);
+            }
+            catch (Exception e)
+            {
+                Universe.Log($"Failed to force-copy Texture: {e}");
+                return default;
+            }
         }
 
         /// <summary>
@@ -182,22 +199,32 @@ namespace UniverseLib.Runtime
         /// </summary>
         public static Texture2D UnwrapCubemap(Cubemap cubemap)
         {
-            if (!IsReadable(cubemap) && !Instance.Internal_CanForceReadCubemaps)
+            bool canForceRead = Instance.Internal_CanForceReadCubemaps;
+
+            if (!IsReadable(cubemap) && !canForceRead)
                 throw new NotSupportedException("Unable to force-read non-readable Cubemaps in this game.");
 
-            Texture2D newTex = NewTexture2D(cubemap.width * 3, cubemap.height * 2, cubemap.format, false);
+            // Graphics.CopyTexture needs a matching format, but SetPixels only works on uncompressed
+            // formats, so use whichever suits the path we are about to take
+            TextureFormat format = canForceRead ? cubemap.format : TextureFormat.ARGB32;
+
+            Texture2D newTex = NewTexture2D(cubemap.width * 3, cubemap.height * 2, format, false);
 
             for (int i = 0; i < 6; i++)
             {
-                int x = i % 3 * cubemap.width;
-                int y = i % 2 * cubemap.height;
+                // X faces on the left, Y in the middle, Z on the right, positives on the top row
+                int x = i / 2 * cubemap.width;
+                int y = i % 2 == 0 ? cubemap.height : 0;
 
                 // Using the Graphics.CopyTexture method is faster then SetPixels(GetPixels())
-                if (Instance.Internal_CanForceReadCubemaps)
+                if (canForceRead)
                     CopyTexture(cubemap, newTex, default, i, x, y);
                 else
                     newTex.SetPixels(x, y, cubemap.width, cubemap.height, cubemap.GetPixels((CubemapFace)i));
             }
+
+            if (!canForceRead)
+                newTex.Apply(false, false);
 
             return newTex;
         }
