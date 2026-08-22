@@ -157,7 +157,7 @@
     </ItemGroup>
     <ItemGroup Condition="'$(Configuration)' == 'Release_Unity63_Mono'">
         <Reference Include="netstandard">
-            <HintPath>..\..\lib\unity63\netstandard.dll</HintPath>
+            <HintPath>..\lib\unity63\netstandard.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine">
@@ -173,27 +173,27 @@
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.UIModule">
-            <HintPath>..\..\lib\unity63\UnityEngine.UIModule.dll</HintPath>
+            <HintPath>..\lib\unity63\UnityEngine.UIModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.IMGUIModule">
-            <HintPath>..\..\lib\unity63\UnityEngine.IMGUIModule.dll</HintPath>
+            <HintPath>..\lib\unity63\UnityEngine.IMGUIModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.PhysicsModule">
-            <HintPath>..\..\lib\unity63\UnityEngine.PhysicsModule.dll</HintPath>
+            <HintPath>..\lib\unity63\UnityEngine.PhysicsModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.TextRenderingModule">
-            <HintPath>..\..\lib\unity63\UnityEngine.TextRenderingModule.dll</HintPath>
+            <HintPath>..\lib\unity63\UnityEngine.TextRenderingModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.AudioModule">
-            <HintPath>..\..\lib\unity63\UnityEngine.AudioModule.dll</HintPath>
+            <HintPath>..\lib\unity63\UnityEngine.AudioModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="UnityEngine.AssetBundleModule">
-            <HintPath>..\..\lib\unity63\UnityEngine.AssetBundleModule.dll</HintPath>
+            <HintPath>..\lib\unity63\UnityEngine.AssetBundleModule.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
