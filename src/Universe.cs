@@ -32,7 +32,7 @@ public static class Universe
     }
 
     public const string NAME = "UniverseLib";
-    public const string VERSION = "1.7.0";
+    public const string VERSION = "1.7.1";
     public const string AUTHOR = "Sinai, yukieiji, Jettcodey";
     public const string GUID = "com.sinai.universelib";
 
