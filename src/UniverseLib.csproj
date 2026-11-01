@@ -233,4 +233,12 @@
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(OutputPath)..\NuGet_Unity63_Mono\lib\net35" Condition="'$(Configuration)' == 'Release_Mono'" />
         <Copy SourceFiles="$(OutputPath)$(AssemblyName).xml" DestinationFolder="$(OutputPath)..\NuGet_Unity63_Mono\lib\net35" Condition="'$(Configuration)' == 'Release_Mono'" />
     </Target>
+
+    <!-- Release build of every configuration, on Windows and Linux: dotnet msbuild src/UniverseLib.csproj -t:BuildRelease -->
+    <ItemGroup>
+        <ReleaseConfiguration Include="Release_Mono;Release_IL2CPP_Unhollower;Release_IL2CPP_Interop_BIE;Release_IL2CPP_Interop_ML;Release_Unity63_Mono" />
+    </ItemGroup>
+    <Target Name="BuildRelease">
+        <Exec Command="dotnet build &quot;$(MSBuildProjectFullPath)&quot; -c %(ReleaseConfiguration.Identity)" />
+    </Target>
 </Project>
