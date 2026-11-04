@@ -381,6 +381,9 @@ public class InputSystem : IHandleInput
         UIActionMap = map;
 
         p_actionsAsset = TInputSystemUIInputModule.GetProperty("actionsAsset");
+
+        // our own asset, the shared default actions get destroyed when any other InputSystemUIInputModule is disabled
+        p_actionsAsset?.SetValue(newInputModule.TryCast(TInputSystemUIInputModule), asset, null);
     }
 
     private void CreateAction(object map, string actionName, string[] bindings, string propertyName)
