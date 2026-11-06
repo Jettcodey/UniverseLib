@@ -111,7 +111,7 @@ namespace UniverseLib.UI.Widgets.ScrollView
         /// </summary>
         public override void Update()
         {
-            if (!ScrollRect || DataSource == null)
+            if (!ScrollRect || DataSource == null || !CellPool.Any())
                 return;
 
             if (writingLocked && timeofLastWriteLock.OccuredEarlierThanDefault())
