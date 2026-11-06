@@ -142,6 +142,17 @@ namespace UniverseLib.UI.Widgets
             if (!transform)
                 throw new ArgumentNullException(nameof(transform));
 
+            // make sure all parents of the object are expanded
+            Transform parent = transform.parent;
+            while (parent)
+            {
+                int pid = parent.GetInstanceID();
+                if (!expandedInstanceIDs.Contains(pid))
+                    expandedInstanceIDs.Add(pid);
+
+                parent = parent.parent;
+            }
+
             // Refresh cached transforms (no UI rebuild yet).
             // Stop existing coroutine and do it oneshot.
             RefreshData(false, false, true, true);
@@ -157,19 +168,8 @@ namespace UniverseLib.UI.Widgets
                     break;
             }
 
-            if (idx == -1)
+            if (idx == cachedTransforms.Count)
                 throw new ArgumentException($"Transform {transform.name} is not cached in this TransformTree.");
-
-            // make sure all parents of the object are expanded
-            Transform parent = transform.parent;
-            while (parent)
-            {
-                int pid = parent.GetInstanceID();
-                if (!expandedInstanceIDs.Contains(pid))
-                    expandedInstanceIDs.Add(pid);
-
-                parent = parent.parent;
-            }
 
             ScrollPool.JumpToIndex(idx, OnCellJumpedTo);
         }
