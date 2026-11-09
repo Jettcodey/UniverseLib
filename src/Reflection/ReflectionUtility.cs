@@ -104,8 +104,13 @@ public class ReflectionUtility
         string path = Path.Combine(Application.dataPath, "Managed");
         if (Directory.Exists(path))
         {
+            // BepInEx 5 loads patched assemblies (UnityEngine.CoreModule) from memory, LoadFrom would add a second copy of their types
+            HashSet<string> loaded = new(AppDomain.CurrentDomain.GetAssemblies().Select(it => it.GetName().Name));
             foreach (string dllPath in Directory.GetFiles(path, "*.dll"))
             {
+                if (loaded.Contains(Path.GetFileNameWithoutExtension(dllPath)))
+                    continue;
+
                 try
                 {
                     // load and resolve the assembly's types.
