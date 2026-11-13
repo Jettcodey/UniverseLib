@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Events;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -132,6 +133,36 @@ namespace UniverseLib.Utility
                             ?? throw new Exception("Could not get InputField.onEndEdit property!");
 
             return onEndEdit.GetValue(_this, null).TryCast<UnityEvent<string>>();
+        }
+        // Scene.m_Handle is an int before Unity 6.3, after that it's a SceneHandle holding an EntityId (m_Value.m_Data)
+        private static readonly FieldInfo sceneHandleField = AccessTools.Field(typeof(Scene), "m_Handle");
+        private static readonly FieldInfo sceneHandleValueField = sceneHandleField.FieldType == typeof(int) ? null : AccessTools.Field(sceneHandleField.FieldType, "m_Value");
+        private static readonly FieldInfo entityIdDataField = sceneHandleValueField == null ? null : AccessTools.Field(sceneHandleValueField.FieldType, "m_Data");
+
+        internal static bool SceneHandleIsStruct => sceneHandleValueField != null;
+
+        /// <summary>
+        /// Returns the handle of this Scene as an int on every Unity version (<see cref="Scene.handle"/> returns a SceneHandle from Unity 6.3).
+        /// </summary>
+        public static int GetHandle(this Scene scene)
+        {
+            object handle = sceneHandleField.GetValue(scene);
+            return sceneHandleValueField == null ? (int)handle : (int)entityIdDataField.GetValue(sceneHandleValueField.GetValue(handle));
+        }
+
+        /// <summary>
+        /// Converts an int scene handle into the type of Scene.m_Handle on this Unity version (int, or SceneHandle from Unity 6.3).
+        /// </summary>
+        public static object ToSceneHandle(int handle)
+        {
+            if (sceneHandleValueField == null)
+                return handle;
+
+            object entityId = Activator.CreateInstance(sceneHandleValueField.FieldType);
+            entityIdDataField.SetValue(entityId, handle);
+            object sceneHandle = Activator.CreateInstance(sceneHandleField.FieldType);
+            sceneHandleValueField.SetValue(sceneHandle, entityId);
+            return sceneHandle;
         }
     }
 }

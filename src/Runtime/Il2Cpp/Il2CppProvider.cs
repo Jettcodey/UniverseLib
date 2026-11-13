@@ -35,7 +35,15 @@ namespace UniverseLib.Runtime.Il2Cpp
 
         internal delegate void d_GetRootGameObjects(int handle, IntPtr list);
 
+        // From Unity 6.3 the scene iCalls are _Injected and take the SceneHandle by reference, which has the same layout as an int
+        internal delegate void d_GetRootGameObjects_Injected(ref int handle, IntPtr list);
+
         internal delegate int d_GetRootCountInternal(int handle);
+
+        internal delegate int d_GetRootCountInternal_Injected(ref int handle);
+
+        // From Unity 6 LayerToName is _Injected and returns the name as UTF-16 chars allocated by Unity, freed with BindingsAllocator.Free
+        private static readonly bool layerToNameInjected = IL2CPP.il2cpp_resolve_icall("UnityEngine.LayerMask::LayerToName_Injected") != IntPtr.Zero;
 
         protected internal override void OnInitialize()
         {
@@ -101,31 +109,45 @@ namespace UniverseLib.Runtime.Il2Cpp
         /// <inheritdoc/>
         protected internal override GameObject[] Internal_GetRootGameObjects(Scene scene)
         {
-            if (!scene.isLoaded || scene.handle == -1)
+            int handle = scene.GetHandle();
+            if (!scene.isLoaded || handle == -1)
             {
                 return [];
             }
 
-            int count = GetRootCount(scene.handle);
+            int count = GetRootCount(handle);
             if (count < 1)
             {
                 return [];
             }
 
             Il2CppSystem.Collections.Generic.List<GameObject> list = new(count);
-            ICallManager.GetICall<d_GetRootGameObjects>("UnityEngine.SceneManagement.Scene::GetRootGameObjectsInternal")
-                .Invoke(scene.handle, list.Pointer);
+            if (UnityHelpers.SceneHandleIsStruct)
+            {
+                ICallManager.GetICall<d_GetRootGameObjects_Injected>("UnityEngine.SceneManagement.Scene::GetRootGameObjectsInternal_Injected")
+                    .Invoke(ref handle, list.Pointer);
+            }
+            else
+            {
+                ICallManager.GetICall<d_GetRootGameObjects>("UnityEngine.SceneManagement.Scene::GetRootGameObjectsInternal")
+                    .Invoke(handle, list.Pointer);
+            }
             return list.ToArray();
         }
 
         /// <inheritdoc/>
-        protected internal override int Internal_GetRootCount(Scene scene) => GetRootCount(scene.handle);
+        protected internal override int Internal_GetRootCount(Scene scene) => GetRootCount(scene.GetHandle());
 
         /// <summary>
         /// Gets the <see cref="Scene.rootCount"/> for the provided scene handle.
         /// </summary>
         protected internal static int GetRootCount(int sceneHandle)
         {
+            if (UnityHelpers.SceneHandleIsStruct)
+            {
+                return ICallManager.GetICall<d_GetRootCountInternal_Injected>("UnityEngine.SceneManagement.Scene::GetRootCountInternal_Injected")
+                       .Invoke(ref sceneHandle);
+            }
             return ICallManager.GetICall<d_GetRootCountInternal>("UnityEngine.SceneManagement.Scene::GetRootCountInternal")
                    .Invoke(sceneHandle);
         }
