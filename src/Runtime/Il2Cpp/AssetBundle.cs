@@ -53,8 +53,8 @@ public class AssetBundle : UnityEngine.Object
         IntPtr? ptr;
         if (ICallManager.TryGetICallUnreliable<d_LoadFromFile_Injected>(
                 out var iCall,
-                "UnityEngine.AssetBundle::LoadFromFile_Internal_Injecte",
-                "UnityEngine.AssetBundle::LoadFromFile_Injecte"))
+                "UnityEngine.AssetBundle::LoadFromFile_Internal_Injected",
+                "UnityEngine.AssetBundle::LoadFromFile_Injected"))
         {
             IntPtr gcHandle = ManagedSpanWrapper.Invoke(path, span => iCall!.Invoke(ref span, crc, offset));
             ptr = (gcHandle != IntPtr.Zero) ? gcHandle.GetTargetPtr() : null;
@@ -73,6 +73,7 @@ public class AssetBundle : UnityEngine.Object
     // AssetBundle.LoadFromMemory(byte[] binary)
 
     private delegate IntPtr d_LoadFromMemory(IntPtr binary, uint crc);
+    private delegate IntPtr d_LoadFromMemory_Injected(ref ManagedSpanWrapper binary, uint crc);
 
     private delegate void d_ValidateLoadFromStream(IntPtr stream);
     private delegate IntPtr d_LoadFromStream(IntPtr stream, uint crc, uint managedReadBufferSize);
@@ -81,10 +82,19 @@ public class AssetBundle : UnityEngine.Object
     public static AssetBundle? LoadFromMemory(byte[] binary, uint crc = 0)
     {
         var il2cppArray = new Il2CppStructArray<byte>(binary);
-        var ptr = ICallManager.GetICallUnreliable<d_LoadFromMemory>(
-            "UnityEngine.AssetBundle::LoadFromMemory_Internal",
-            "UnityEngine.AssetBundle::LoadFromMemory")
-        ?.Invoke(il2cppArray.Pointer, crc);
+        IntPtr? ptr;
+        if (ICallManager.TryGetICall<d_LoadFromMemory_Injected>("UnityEngine.AssetBundle::LoadFromMemory_Internal_Injected", out var iCall))
+        {
+            IntPtr gcHandle = ManagedSpanWrapper.Invoke(binary, span => iCall!.Invoke(ref span, crc));
+            ptr = (gcHandle != IntPtr.Zero) ? gcHandle.GetTargetPtr() : null;
+        }
+        else
+        {
+            ptr = ICallManager.GetICallUnreliable<d_LoadFromMemory>(
+                "UnityEngine.AssetBundle::LoadFromMemory_Internal",
+                "UnityEngine.AssetBundle::LoadFromMemory")
+            ?.Invoke(il2cppArray.Pointer, crc);
+        }
 
         if (ptr.HasValue && ptr.Value != IntPtr.Zero)
         {

@@ -31,6 +31,10 @@ namespace UniverseLib.Runtime.Il2Cpp
 
         internal delegate IntPtr d_LayerToName(int layer);
 
+        internal delegate void d_LayerToName_Injected(int layer, out ManagedSpanWrapper ret);
+
+        internal delegate void d_BindingsAllocator_Free(IntPtr ptr);
+
         internal delegate IntPtr d_FindObjectsOfTypeAll(IntPtr type);
 
         internal delegate void d_GetRootGameObjects(int handle, IntPtr list);
@@ -80,8 +84,19 @@ namespace UniverseLib.Runtime.Il2Cpp
         }
 
         /// <inheritdoc/>
-        protected internal override string Internal_LayerToName(int layer)
+        protected internal override unsafe string Internal_LayerToName(int layer)
         {
+            if (layerToNameInjected)
+            {
+                ICallManager.GetICall<d_LayerToName_Injected>("UnityEngine.LayerMask::LayerToName_Injected").Invoke(layer, out ManagedSpanWrapper ret);
+                if (ret.length == 0)
+                    return null;
+
+                string name = new((char*)ret.begin, 0, ret.length);
+                ICallManager.GetICall<d_BindingsAllocator_Free>("UnityEngine.Bindings.BindingsAllocator::Free").Invoke((IntPtr)ret.begin);
+                return name;
+            }
+
             d_LayerToName iCall = ICallManager.GetICall<d_LayerToName>("UnityEngine.LayerMask::LayerToName");
             return IL2CPP.Il2CppStringToManaged(iCall.Invoke(layer));
         }
