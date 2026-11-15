@@ -384,7 +384,8 @@ public class Il2CppReflection : ReflectionUtility
                     return cppObj;
                 }
 
-                return Enum.Parse(toType, cppObj.TryCast<Il2CppSystem.Enum>()?.ToString() ?? "");
+                // Il2CppSystem.Object and not Il2CppSystem.Enum, which MelonLoader 0.6's Il2CppInterop generates as a struct
+                return Enum.Parse(toType, cppObj.TryCast<Il2CppSystem.Object>()?.ToString() ?? "");
             }
 
             // Not enum, unbox with Il2CppObjectBase.Unbox
