@@ -9,6 +9,9 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+#if CPP
+using UniverseLib.Runtime.Il2Cpp;
+#endif
 using Object = UnityEngine.Object;
 
 namespace UniverseLib.Utility
@@ -134,6 +137,44 @@ namespace UniverseLib.Utility
 
             return onEndEdit.GetValue(_this, null).TryCast<UnityEvent<string>>();
         }
+
+#if CPP
+        // Unity 6 IL2CPP: a set_tag restored by Il2CppInterop throws MissingMethodException, the set_tag_Injected iCall still works
+        private delegate void d_set_tag_Injected(IntPtr _unity_self, ref ManagedSpanWrapper value);
+#endif
+
+        /// <summary>
+        /// Sets <see cref="GameObject.tag"/>. On Unity 6 IL2CPP games where the tag setter is broken in the interop, the tag is set through the iCall instead.
+        /// </summary>
+        public static void SetTag(this GameObject gameObject, string tag)
+        {
+#if CPP
+            try
+            {
+                gameObject.tag = tag;
+            }
+            catch (MissingMethodException)
+            {
+                if (!ICallManager.TryGetICall<d_set_tag_Injected>("UnityEngine.GameObject::set_tag_Injected", out d_set_tag_Injected setTag))
+                    throw;
+
+                if (gameObject.m_CachedPtr == IntPtr.Zero)
+                    throw new NullReferenceException("The GameObject was destroyed!");
+
+                unsafe
+                {
+                    fixed (char* chars = tag)
+                    {
+                        ManagedSpanWrapper span = new() { begin = chars, length = tag.Length };
+                        setTag(gameObject.m_CachedPtr, ref span);
+                    }
+                }
+            }
+#else
+            gameObject.tag = tag;
+#endif
+        }
+
         // Scene.m_Handle is an int before Unity 6.3, after that it's a SceneHandle holding an EntityId (m_Value.m_Data)
         private static readonly FieldInfo sceneHandleField = AccessTools.Field(typeof(Scene), "m_Handle");
         private static readonly FieldInfo sceneHandleValueField = sceneHandleField.FieldType == typeof(int) ? null : AccessTools.Field(sceneHandleField.FieldType, "m_Value");
