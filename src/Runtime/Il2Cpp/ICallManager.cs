@@ -35,7 +35,8 @@ public static class ICallManager
     /// <exception cref="MissingMethodException" />
     public static bool TryGetICall<T>(string signature, out T? iCall) where T : Delegate
     {
-        iCall = GetICall<T>(signature);
+        // no warning, the caller has a fallback, like AssetBundle's _Injected iCalls before Unity 6
+        iCall = GetICall<T>(signature, false);
         return iCall != null;
     }
 
@@ -49,6 +50,9 @@ public static class ICallManager
     /// <returns>The <typeparamref name="T"/> delegate if successful.</returns>
     /// <exception cref="MissingMethodException" />
     public static T? GetICall<T>(string signature) where T : Delegate
+        => GetICall<T>(signature, true);
+
+    private static T? GetICall<T>(string signature, bool warnIfMissing) where T : Delegate
     {
         if (iCallCache.TryGetValue(signature, out var sig))
         {
@@ -60,7 +64,8 @@ public static class ICallManager
                 TryResolveICall($"{signature}_Injected", out ptr)
             ))
         {
-            Universe.LogWarning($"Could not find any iCall with the signature '{signature}'!");
+            if (warnIfMissing)
+                Universe.LogWarning($"Could not find any iCall with the signature '{signature}'!");
             return null;
         }
 
@@ -80,7 +85,7 @@ public static class ICallManager
     /// <exception cref="MissingMethodException" />
     public static bool TryGetICallUnreliable<T>(out T? iCall, params string[] possibleSignatures) where T : Delegate
     {
-        iCall = GetICallUnreliable<T>(possibleSignatures);
+        iCall = GetICallUnreliable<T>(false, possibleSignatures);
         return iCall != null;
     }
 
@@ -90,6 +95,9 @@ public static class ICallManager
     /// Fixed the issue where the iCall signature parsing failed for U6000.
     /// </summary>
     public static T? GetICallUnreliable<T>(params string[] possibleSignatures) where T : Delegate
+        => GetICallUnreliable<T>(true, possibleSignatures);
+
+    private static T? GetICallUnreliable<T>(bool warnIfMissing, string[] possibleSignatures) where T : Delegate
     {
         // use the first possible signature as the 'key'.
         string key = possibleSignatures.First();
@@ -113,7 +121,8 @@ public static class ICallManager
             }
         }
 
-        Universe.LogWarning($"Could not find any iCall from list of provided signatures starting with '{key}'!");
+        if (warnIfMissing)
+            Universe.LogWarning($"Could not find any iCall from list of provided signatures starting with '{key}'!");
         return null;
     }
     /// <summary>

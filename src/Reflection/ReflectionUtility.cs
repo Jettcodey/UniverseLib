@@ -146,6 +146,10 @@ public class ReflectionUtility
                     AllNamespaces.Insert(i, namespaceStr);
                 }
             }
+            catch (TypeLoadException)
+            {
+                // interop types whose declaring type breaks a generic constraint, the type is still cached below
+            }
             catch (Exception e)
             {
                 Universe.LogWarning($"THIS WARNING IS NOT BUG!!!! DON'T REPORT THIS!!!!!\n Can't cache type named {type.Name} Error: {e}");

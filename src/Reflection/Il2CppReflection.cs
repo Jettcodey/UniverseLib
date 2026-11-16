@@ -49,6 +49,7 @@ public class Il2CppReflection : ReflectionUtility
     }
 
     internal Stopwatch initStopwatch = new();
+    private bool loadedMissingModules;
 
     IEnumerator InitCoroutine()
     {
@@ -75,7 +76,23 @@ public class Il2CppReflection : ReflectionUtility
     }
 
     internal override Type Internal_GetTypeByName(string fullName)
-        => obfuscatedToDeobfuscatedTypes.TryGetValue(fullName, out Type? deob) ? deob : base.Internal_GetTypeByName(fullName);
+    {
+        if (obfuscatedToDeobfuscatedTypes.TryGetValue(fullName, out Type? deob))
+            return deob;
+
+        Type type = base.Internal_GetTypeByName(fullName);
+
+        // a module's types can be missing from the type cache (BepInEx 6.0.0-pre.2), so the first miss after init loads and caches them again
+        if (type == null && !Initializing && !loadedMissingModules)
+        {
+            loadedMissingModules = true;
+            LoadMissingGameModules();
+            RecacheGameModules();
+            type = base.Internal_GetTypeByName(fullName);
+        }
+
+        return type;
+    }
 
 
     #region Get Actual type
@@ -593,6 +610,13 @@ public class Il2CppReflection : ReflectionUtility
     /// </summary>
     public static bool Il2CppTypeNotNull(Type type, out IntPtr il2cppPtr)
     {
+        // These can't be a generic argument of Il2CppClassPointerStore<T> (void comes from evaluating void methods)
+        if (type == typeof(void) || type.IsByRef || type.IsPointer || type.ContainsGenericParameters)
+        {
+            il2cppPtr = IntPtr.Zero;
+            return false;
+        }
+
         var name = type.AssemblyQualifiedName ?? "";
         if (!cppClassPointers.TryGetValue(name, out il2cppPtr))
         {
@@ -722,10 +746,43 @@ public class Il2CppReflection : ReflectionUtility
             Assembly.LoadFrom(fullPath);
             return true;
         }
-        catch
+        catch (Exception e)
         {
-            //Universe.LogWarning($"Failed loading module '{Path.GetFileName(fullPath)}'! {e.ReflectionExToString()}");
+            Universe.LogWarning($"Failed loading module '{Path.GetFileName(fullPath)}'! {e.ReflectionExToString()}");
             return false;
+        }
+    }
+
+    internal void RecacheGameModules()
+    {
+        string dir = ConfigManager.Unhollowed_Modules_Folder;
+        if (!Directory.Exists(dir))
+            return;
+
+        string full = Path.GetFullPath(dir);
+        int before = AllTypes.Count;
+        foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            if (asm.IsDynamic || string.IsNullOrEmpty(asm.Location))
+                continue;
+            if (Path.GetFullPath(asm.Location).StartsWith(full, StringComparison.OrdinalIgnoreCase))
+                CacheTypes(asm);
+        }
+        if (AllTypes.Count > before)
+            Universe.Log($"Cached {AllTypes.Count - before} types from interop modules that were missing from the type cache");
+    }
+
+    internal void LoadMissingGameModules()
+    {
+        string dir = ConfigManager.Unhollowed_Modules_Folder;
+        if (!Directory.Exists(dir))
+            return;
+
+        HashSet<string> loaded = new(AppDomain.CurrentDomain.GetAssemblies().Select(it => it.GetName().Name), StringComparer.OrdinalIgnoreCase);
+        foreach (string filePath in Directory.GetFiles(dir, "*.dll"))
+        {
+            if (!loaded.Contains(Path.GetFileNameWithoutExtension(filePath)) && DoLoadModule(filePath))
+                Universe.Log($"Loaded module '{Path.GetFileName(filePath)}', it wasn't loaded after init");
         }
     }
 
