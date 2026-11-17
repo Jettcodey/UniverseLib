@@ -964,15 +964,12 @@ public class Il2CppReflection : ReflectionUtility
 
     static IEnumerator<DictionaryEntry> EnumerateCppHashTable(Il2CppSystem.Collections.Hashtable hashtable)
     {
-        for (int i = 0; i < hashtable.buckets.Count; i++)
+        // the buckets field isn't in every game's interop, so the entries come from the Hashtable's own enumerator
+        Il2CppSystem.Collections.IDictionaryEnumerator entries = hashtable.GetEnumerator();
+        Il2CppSystem.Collections.IEnumerator enumerator = entries.TryCast<Il2CppSystem.Collections.IEnumerator>();
+        while (enumerator.MoveNext())
         {
-            Il2CppSystem.Collections.Hashtable.bucket bucket = hashtable.buckets[i];
-            if (bucket == null || bucket.key == null)
-            {
-                continue;
-            }
-
-            yield return new DictionaryEntry(bucket.key, bucket.val);
+            yield return new DictionaryEntry(entries.Key, entries.Value);
         }
     }
 
