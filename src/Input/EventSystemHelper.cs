@@ -270,6 +270,11 @@ namespace UniverseLib.Input
                 prefix: AccessTools.Method(typeof(EventSystemHelper), nameof(Prefix_EventSystem_set_current)));
 
             Universe.Patch(typeof(EventSystem),
+                "OnEnable",
+                MethodType.Normal,
+                prefix: AccessTools.Method(typeof(EventSystemHelper), nameof(Prefix_EventSystem_OnEnable)));
+
+            Universe.Patch(typeof(EventSystem),
                 "SetSelectedGameObject",
                 MethodType.Normal,
                 new Type[][]
@@ -288,6 +293,19 @@ namespace UniverseLib.Input
                 return true;
 
             return __0 && __0.transform.root.gameObject.GetInstanceID() == UniversalUI.CanvasRoot.GetInstanceID();
+        }
+
+        // a game EventSystem enabled while ours is active would register next to it and Unity warns, so it waits for ReleaseEventSystem
+        internal static bool Prefix_EventSystem_OnEnable(EventSystem __instance)
+        {
+            if (settingEventSystem || ConfigManager.Disable_EventSystem_Override
+                || !UniversalUI.EventSys || !UniversalUI.EventSys.enabled || __instance.ReferenceEqual(UniversalUI.EventSys))
+                return true;
+
+            lastEventSystem = __instance;
+            lastInputModule = __instance.currentInputModule;
+            __instance.enabled = false;
+            return false;
         }
 
         // Force EventSystem.current to be UniverseLib's when menu is open

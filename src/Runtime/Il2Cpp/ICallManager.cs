@@ -109,7 +109,7 @@ public static class ICallManager
 
         var loopSig = new List<string>(possibleSignatures);
         // In Unity 6000, most iCall signatures have been renamed from xxx to xxx_Injected.
-        loopSig.Concat(possibleSignatures.Select(s => $"{s}_Injected"));
+        loopSig.AddRange(possibleSignatures.Select(s => $"{s}_Injected"));
 
         foreach (string sig in loopSig)
         {
