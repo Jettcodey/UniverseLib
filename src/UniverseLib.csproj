@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <RootNamespace>UniverseLib</RootNamespace>
-        <Configuration Condition=" '$(Configuration)' == '' ">Release_IL2CPP_Unhollower</Configuration>
+        <Configuration Condition=" '$(Configuration)' == 'Debug' ">Release_Mono</Configuration>
         <OutputType>Library</OutputType>
         <LangVersion>latest</LangVersion>
         <DebugSymbols>false</DebugSymbols>
@@ -185,6 +185,6 @@
         <ReleaseConfiguration Include="Release_Mono;Release_IL2CPP_Interop_BIE;Release_IL2CPP_Interop_ML" />
     </ItemGroup>
     <Target Name="BuildRelease">
-        <Exec Command="dotnet build &quot;$(MSBuildProjectFullPath)&quot; -c %(ReleaseConfiguration.Identity)" />
+        <Exec Command="&quot;$(DOTNET_HOST_PATH)&quot; build &quot;$(MSBuildProjectFullPath)&quot; -c %(ReleaseConfiguration.Identity)" />
     </Target>
 </Project>
